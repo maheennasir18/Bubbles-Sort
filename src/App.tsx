@@ -39,6 +39,19 @@ function App() {
     }
   }, [])
 
+  const handleTouchDrop = useCallback((trendId: string, clientX: number, clientY: number) => {
+    const el = document.elementFromPoint(clientX, clientY)
+    const zoneEl = el?.closest?.('[data-drop-zone]')
+    const zone = zoneEl?.getAttribute('data-drop-zone')
+    if (zone === 'pool') {
+      setPlacements((prev) => ({ ...prev, [trendId]: 'pool' }))
+      return
+    }
+    if (zone && CATEGORIES.includes(zone as TechCategory)) {
+      handleDropZone(trendId, zone as TechCategory)
+    }
+  }, [handleDropZone])
+
   const inZone = (zone: TechCategory) =>
     TECH_TRENDS.filter((t) => placements[t.id] === zone)
   const inPool = TECH_TRENDS.filter((t) => placements[t.id] === 'pool')
@@ -75,6 +88,7 @@ function App() {
           onDropToPool={(trendId) => {
             setPlacements((prev) => ({ ...prev, [trendId]: 'pool' }))
           }}
+          onTouchDrop={handleTouchDrop}
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -86,6 +100,7 @@ function App() {
                   trend={trend}
                   imageIndex={TECH_TRENDS.indexOf(trend)}
                   isCorrect={lastCorrectId === trend.id}
+                  onTouchEnd={(x, y) => handleTouchDrop(trend.id, x, y)}
                 />
               ))}
             </DropZone>

@@ -6,9 +6,10 @@ interface PoolAreaProps {
   inPool: TechTrend[]
   lastCorrectId: string | null
   onDropToPool: (trendId: string) => void
+  onTouchDrop?: (trendId: string, clientX: number, clientY: number) => void
 }
 
-export function PoolArea({ inPool, lastCorrectId, onDropToPool }: PoolAreaProps) {
+export function PoolArea({ inPool, lastCorrectId, onDropToPool, onTouchDrop }: PoolAreaProps) {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
@@ -25,6 +26,7 @@ export function PoolArea({ inPool, lastCorrectId, onDropToPool }: PoolAreaProps)
         🫧 Drag from here (or drop back)
       </h2>
       <div
+        data-drop-zone="pool"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         className="flex flex-wrap justify-center gap-3 min-h-[100px] p-4 rounded-2xl bg-white/50 border-2 border-dashed border-pink-200 sparkle-zone transition-colors hover:border-pink-300"
@@ -35,6 +37,7 @@ export function PoolArea({ inPool, lastCorrectId, onDropToPool }: PoolAreaProps)
             trend={trend}
             imageIndex={TECH_TRENDS.indexOf(trend)}
             isCorrect={lastCorrectId === trend.id}
+            onTouchEnd={onTouchDrop ? (x, y) => onTouchDrop(trend.id, x, y) : undefined}
           />
         ))}
         {inPool.length === 0 && (

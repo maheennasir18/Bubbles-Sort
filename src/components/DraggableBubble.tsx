@@ -1,18 +1,45 @@
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import type { TechTrend } from '@/types/game'
 import { BUBBLES_IMAGES, BUBBLE_PASTEL_COLORS } from '@/constants/bubblesImages'
 import { getIcon } from '@/utils/icons'
 
+const TOUCH_DRAG_THRESHOLD = 10
+
 interface DraggableBubbleProps {
   trend: TechTrend
   imageIndex: number
   isCorrect?: boolean
+  onTouchStart?: () => void
+  onTouchEnd?: (clientX: number, clientY: number) => void
 }
 
-export function DraggableBubble({ trend, imageIndex, isCorrect }: DraggableBubbleProps) {
+export function DraggableBubble({ trend, imageIndex, isCorrect, onTouchStart, onTouchEnd }: DraggableBubbleProps) {
   const Icon = getIcon(trend.iconName)
   const colors = BUBBLE_PASTEL_COLORS[imageIndex % BUBBLE_PASTEL_COLORS.length]
   const imageSrc = BUBBLES_IMAGES[imageIndex % BUBBLES_IMAGES.length]
+  const lastTouch = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+  const touchStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+  const isTouchDrag = useRef(false)
+  const dragElRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = dragElRef.current
+    if (!el) return
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 0) return
+      const t = e.touches[0]
+      lastTouch.current = { x: t.clientX, y: t.clientY }
+      if (!isTouchDrag.current) {
+        const dx = t.clientX - touchStart.current.x
+        const dy = t.clientY - touchStart.current.y
+        if (Math.hypot(dx, dy) > TOUCH_DRAG_THRESHOLD) isTouchDrag.current = true
+      }
+      if (isTouchDrag.current) e.preventDefault()
+    }
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    return () => el.removeEventListener('touchmove', onTouchMove)
+  }, [])
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', trend.id)
@@ -22,6 +49,21 @@ export function DraggableBubble({ trend, imageIndex, isCorrect }: DraggableBubbl
 
   const handleDragEnd = (e: React.DragEvent) => {
     ;(e.currentTarget as HTMLElement).style.opacity = '1'
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY }
+    lastTouch.current = { x: t.clientX, y: t.clientY }
+    isTouchDrag.current = false
+    onTouchStart?.()
+  }
+
+  const handleTouchEnd = () => {
+    if (isTouchDrag.current && onTouchEnd) {
+      onTouchEnd(lastTouch.current.x, lastTouch.current.y)
+    }
+    isTouchDrag.current = false
   }
 
   return (
@@ -42,12 +84,17 @@ export function DraggableBubble({ trend, imageIndex, isCorrect }: DraggableBubbl
       style={{ originX: 0.5, originY: 0.5 }}
     >
       <div
+        ref={dragElRef}
         draggable
         onDragStart={(e) => {
           (e.currentTarget as HTMLElement).style.opacity = '0.85'
           handleDragStart(e)
         }}
         onDragEnd={handleDragEnd}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        style={{ touchAction: 'none' }}
         role="button"
         tabIndex={0}
         aria-label={`Drag ${trend.label} to its category`}

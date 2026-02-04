@@ -26,6 +26,7 @@ export function DropZone({ category, children, onDrop, isOver }: DropZoneProps) 
 
   return (
     <div
+      data-drop-zone={category}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       className={`
