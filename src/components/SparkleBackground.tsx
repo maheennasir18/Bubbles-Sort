@@ -3,16 +3,6 @@ import { useMemo } from 'react'
 const SPARKLES = ['✨', '⭐', '🌟', '✧', '✦', '💫']
 const COUNT = 24
 
-interface Particle {
-  id: number
-  left: number
-  top: number
-  size: number
-  delay: number
-  duration: number
-  emoji: string
-}
-
 export function SparkleBackground() {
   const particles = useMemo(() => {
     return Array.from({ length: COUNT }, (_, i) => ({
